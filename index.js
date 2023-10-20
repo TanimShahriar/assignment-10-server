@@ -29,6 +29,8 @@ async function run() {
     await client.connect();
 
     const productCollection = client.db("productDB").collection("product");
+    const addCollection = client.db("productDB").collection("addtocart");
+
 
     app.get("/product", async (req, res) => {
       const cursor = productCollection.find();
@@ -78,6 +80,49 @@ async function run() {
       const result = await productCollection.deleteOne(query);
       res.send(result);
     })
+
+    //add to cart section
+    app.get("/addtocart", async (req, res) => {
+      const cursor = addCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+    app.get("/addtocart/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await addCollection.findOne(query);
+      res.send(result);
+    })
+
+    app.post("/addtocart", async (req, res) => {
+      const addToNewProduct = req.body;
+      console.log(addToNewProduct);
+      const result = await addCollection.insertOne(addToNewProduct);
+      res.send(result);
+    })
+
+
+    app.put("/addtocart/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true };
+      const addCart = req.body;
+      const addCartProduct = {
+        $set: {
+          name: addCart.name,
+          rating: addCart.rating,
+          brand: addCart.brand,
+          type: addCart.type,
+          price: addCart.price,
+          photo: addCart.photo
+        }
+      }
+      const result = await addCollection.updateOne(filter, addCartProduct, options);
+      res.send(result);
+    })
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
